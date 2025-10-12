@@ -7,7 +7,18 @@ export const webhookHandler = async (req: any, res: any) => {
 
     req.on('end', () => {
         console.log('Received webhook event:', body);
-        res.status(200).send('EVENT_RECEIVED');
+        
+        // Parse the JSON to display it nicely formatted
+        try {
+            const parsedBody = JSON.parse(body);
+            console.log('Parsed webhook data:', JSON.stringify(parsedBody, null, 2));
+        } catch (e) {
+            console.log('Could not parse JSON:', e);
+        }
+        
+        // Use Node.js HTTP response methods
+        res.writeHead(200, { 'Content-Type': 'text/plain' });
+        res.end('EVENT_RECEIVED');
     });
 };
 
@@ -15,18 +26,37 @@ export const webhookHandler = async (req: any, res: any) => {
 export const verifyWebhookHandler = async (req: any, res: any) => {
     const VERIFY_TOKEN = "elim3";
 
-    const mode = req.query['hub.mode'];
-    const token = req.query['hub.verify_token'];
-    const challenge = req.query['hub.challenge'];
+    // console.log('Received verification request:', {
+    //     url: req.url,
+    //     rawQuery: req.url?.split('?')[1],
+    //     headers: req.headers
+    // });
+
+    // Parse query parameters manually
+    const urlSearchParams = new URLSearchParams(req.url?.split('?')[1] || '');
+    const mode = urlSearchParams.get('hub.mode');
+    const token = urlSearchParams.get('hub.verify_token');
+    const challenge = urlSearchParams.get('hub.challenge');
+
+    console.log('Verification parameters:', { mode, token, challenge });
 
     if (mode && token) {
         if (mode === 'subscribe' && token === VERIFY_TOKEN) {
-            console.log('WEBHOOK_VERIFIED');
-            res.status(200).send(challenge);
+            console.log('WEBHOOK_VERIFIED - sending challenge:', challenge);
+            res.writeHead(200, { 'Content-Type': 'text/plain' });
+            res.end(challenge);
         } else {
-            res.sendStatus(403);
+            console.log('Verification failed - token mismatch:', { 
+                receivedToken: token,
+                expectedToken: VERIFY_TOKEN,
+                mode 
+            });
+            res.writeHead(403, { 'Content-Type': 'text/plain' });
+            res.end('Forbidden');
         }
     } else {
-        res.sendStatus(400);
+        console.log('Verification failed - missing parameters');
+        res.writeHead(400, { 'Content-Type': 'text/plain' });
+        res.end('Bad Request');
     }
 };

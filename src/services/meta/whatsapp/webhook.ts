@@ -11,7 +11,7 @@ export const verifyWebhook = api.raw(
     verifyWebhookHandler
 );
 
-export const webhook = api.raw(
+export const receivedPost = api.raw(
     {
         expose: true,
         method: "POST",
