@@ -15,6 +15,18 @@ export const webhookHandler = async (req: any, res: any) => {
         } catch (e) {
             console.log('Could not parse JSON:', e);
         }
+
+
+        // This is where we determine which type of WhatsApp event it is
+        // and handle it accordingly using types from src/types/types.d.ts
+
+
+
+
+
+
+
+
         
         // Use Node.js HTTP response methods
         res.writeHead(200, { 'Content-Type': 'text/plain' });

@@ -4,13 +4,42 @@ declare global {
         // Add global window properties here
     }
 
-    // Add other global interfaces or types here
-    type WhatsAppMessage = {
-        id: string;
-        timestamp: number;
-        content: string;
+    // WhatsApp Webhook Types
+    interface WhatsAppWebhook {
+        object: "whatsapp_business_account";
+        entry: Array<{
+            id: string;
+            changes: Array<{
+                value: {
+                    messaging_product: "whatsapp";
+                    metadata: {
+                        display_phone_number: string;
+                        phone_number_id: string;
+                    };
+                    contacts: Array<{
+                        profile: {
+                            name: string;
+                        };
+                        wa_id: string;
+                    }>;
+                    messages: Array<WhatsAppMessage>;
+                };
+                field: string;
+            }>;
+        }>;
     }
 
+    interface WhatsAppMessage {
+        from: string;
+        id: string;
+        timestamp: string;
+        type: "text" | string;
+        text?: {
+            body: string;
+        };
+    }
+
+    // API Response type
     interface ApiResponse<T> {
         data: T;
         status: number;
