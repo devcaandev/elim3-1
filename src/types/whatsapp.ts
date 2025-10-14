@@ -98,4 +98,4 @@ export function extractMessageId(webhookData: WhatsAppWebhook): string | null {
         console.error('Error extracting message ID:', error);
         return null;
     }
-}
+};

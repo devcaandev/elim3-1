@@ -16,13 +16,19 @@ declare global {
                         display_phone_number: string;
                         phone_number_id: string;
                     };
-                    contacts: Array<{
+                    contacts?: Array<{
                         profile: {
                             name: string;
                         };
                         wa_id: string;
                     }>;
-                    messages: Array<WhatsAppMessage>;
+                    messages?: Array<WhatsAppMessage>;
+                    statuses?: Array<{
+                        id: string;
+                        status: "sent" | "delivered" | "read" | "failed";
+                        timestamp: string;
+                        recipient_id: string;
+                    }>;
                 };
                 field: string;
             }>;
@@ -48,4 +54,4 @@ declare global {
 }
 
 // This export is necessary to make the file a module
-export {};
+export { WhatsAppWebhook };

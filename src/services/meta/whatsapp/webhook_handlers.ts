@@ -1,4 +1,6 @@
 import { extractMessageId, markAsRead } from "../../../types/whatsapp";
+import { WhatsAppWebhook } from "../../../types/types"
+import { processMessage } from "../handlers/incoming";
 
 export const webhookHandler = async (req: any, res: any) => {
     let body = '';
@@ -9,12 +11,12 @@ export const webhookHandler = async (req: any, res: any) => {
 
     req.on('end', () => {
         try {
-            const webhookData = JSON.parse(body);
+            const WhatsAppWebhook = JSON.parse(body) as WhatsAppWebhook;
             
             // Log the parsed webhook data nicely formatted
-            console.log('WhatsApp webhook received:', JSON.stringify(webhookData, null, 2));
+            console.log('WhatsApp webhook received:', JSON.stringify(WhatsAppWebhook, null, 2));
             
-            const messageId = extractMessageId(webhookData);
+            const messageId = extractMessageId(WhatsAppWebhook);
             
             if (messageId) {
                 markAsRead(messageId).then(() => {
@@ -31,6 +33,9 @@ export const webhookHandler = async (req: any, res: any) => {
                         cause: error.cause?.code || error.cause?.message
                     });
                 });
+
+                processMessage(WhatsAppWebhook);
+
             } else {
                 console.log('ℹ️ No message ID found in webhook (likely a status update)');
             }
@@ -40,8 +45,6 @@ export const webhookHandler = async (req: any, res: any) => {
                 rawBody: body
             });
         }
-        
-
         // Use Node.js HTTP response methods
         res.writeHead(200, { 'Content-Type': 'text/plain' });
         res.end('EVENT_RECEIVED');
