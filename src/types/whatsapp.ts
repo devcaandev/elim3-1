@@ -92,7 +92,7 @@ export async function markAsRead(
  */
 export function extractMessageId(webhookData: WhatsAppWebhook): string | null {
     try {
-        const message = webhookData.entry[0]?.changes[0]?.value?.messages[0];
+        const message = webhookData.entry[0]?.changes[0]?.value?.messages?.[0];
         return message?.id || null;
     } catch (error) {
         console.error('Error extracting message ID:', error);
