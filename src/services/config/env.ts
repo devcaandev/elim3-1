@@ -9,10 +9,10 @@ export const WHATSAPP_CONFIG = {
     PHONE_NUMBER_ID: secret("WHATSAPP_PHONE_NUMBER_ID"),
     
     // API Version (not a secret, but kept here for consistency)
-    API_VERSION: "v17.0",
+    API_VERSION: "v23.0",
     
     // Base URL for the WhatsApp API
-    API_URL: "https://graph.facebook.com",
+    WHATSAPP_API_URL: "https://graph.facebook.com",
     
     // WhatsApp Business Account ID
     BUSINESS_ACCOUNT_ID: secret("WHATSAPP_BUSINESS_ACCOUNT_ID"),

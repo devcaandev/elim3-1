@@ -1,3 +1,5 @@
+import { extractMessageId, markAsRead } from "../../../types/whatsapp";
+
 export const webhookHandler = async (req: any, res: any) => {
     let body = '';
 
@@ -6,28 +8,40 @@ export const webhookHandler = async (req: any, res: any) => {
     });
 
     req.on('end', () => {
-        console.log('Received webhook event:', body);
-        
-        // Parse the JSON to display it nicely formatted
         try {
-            const parsedBody = JSON.parse(body);
-            console.log('Parsed webhook data:', JSON.stringify(parsedBody, null, 2));
-        } catch (e) {
-            console.log('Could not parse JSON:', e);
+            const webhookData = JSON.parse(body);
+            
+            // Log the parsed webhook data nicely formatted
+            console.log('WhatsApp webhook received:', JSON.stringify(webhookData, null, 2));
+            
+            const messageId = extractMessageId(webhookData);
+            
+            if (messageId) {
+                markAsRead(messageId).then(() => {
+                    console.log('✅ Message marked as read:', messageId);
+                }).catch(error => {
+                    console.error('❌ Failed to mark message as read:', {
+                        messageId,
+                        error: error.message || error,
+                        url: error.url,
+                        phoneNumberId: error.phoneNumberId,
+                        status: error.status,
+                        statusText: error.statusText,
+                        responseBody: error.responseBody,
+                        cause: error.cause?.code || error.cause?.message
+                    });
+                });
+            } else {
+                console.log('ℹ️ No message ID found in webhook (likely a status update)');
+            }
+        } catch (e:any) {
+            console.error('❌ Failed to parse webhook JSON:', {
+                error: e.message || e,
+                rawBody: body
+            });
         }
-
-
-        // This is where we determine which type of WhatsApp event it is
-        // and handle it accordingly using types from src/types/types.d.ts
-
-
-
-
-
-
-
-
         
+
         // Use Node.js HTTP response methods
         res.writeHead(200, { 'Content-Type': 'text/plain' });
         res.end('EVENT_RECEIVED');
@@ -50,15 +64,13 @@ export const verifyWebhookHandler = async (req: any, res: any) => {
     const token = urlSearchParams.get('hub.verify_token');
     const challenge = urlSearchParams.get('hub.challenge');
 
-    console.log('Verification parameters:', { mode, token, challenge });
-
     if (mode && token) {
         if (mode === 'subscribe' && token === VERIFY_TOKEN) {
-            console.log('WEBHOOK_VERIFIED - sending challenge:', challenge);
+            console.log('✅ Webhook verification successful');
             res.writeHead(200, { 'Content-Type': 'text/plain' });
             res.end(challenge);
         } else {
-            console.log('Verification failed - token mismatch:', { 
+            console.error('❌ Webhook verification failed - token mismatch:', { 
                 receivedToken: token,
                 expectedToken: VERIFY_TOKEN,
                 mode 
@@ -67,7 +79,7 @@ export const verifyWebhookHandler = async (req: any, res: any) => {
             res.end('Forbidden');
         }
     } else {
-        console.log('Verification failed - missing parameters');
+        console.error('❌ Webhook verification failed - missing parameters:', { mode, token, challenge });
         res.writeHead(400, { 'Content-Type': 'text/plain' });
         res.end('Bad Request');
     }
