@@ -18,7 +18,13 @@ export const WHATSAPP_CONFIG = {
     BUSINESS_ACCOUNT_ID: secret("WHATSAPP_BUSINESS_ACCOUNT_ID"),
 
     // Webhook Verify Token
-    VERIFY_TOKEN: secret("WHATSAPP_VERIFY_TOKEN")
+    VERIFY_TOKEN: secret("WHATSAPP_VERIFY_TOKEN"),
+
+
+    // GEMINI_API_KEY
+    GEMINI_KEY_DEVTHINJI: secret("GEMINI_KEY_DEVTHINJI"),
+
+
 } as const;
 
 // // Other application secrets

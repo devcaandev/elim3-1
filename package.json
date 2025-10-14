@@ -11,7 +11,9 @@
     "typescript": "^5.2.2"
   },
   "dependencies": {
-    "encore.dev": "^1.50.5"
+    "@genkit-ai/google-genai": "^1.21.0",
+    "encore.dev": "^1.50.5",
+    "genkit": "^1.21.0"
   },
   "optionalDependencies": {
     "@rollup/rollup-linux-x64-gnu": "^4.13.0"
