@@ -20,9 +20,9 @@ if (!API_KEY) {
 const MODEL_CONFIG = {
     name: 'gemini-2.5-flash',
     temperature: 0.7,
-    maxOutputTokens: 1000,
-    topP: 0.95,
-    topK: 40
+    // maxOutputTokens: 1000,
+    // topP: 0.95,
+    // topK: 40
 } as const;
 
 export const ai = genkit({
@@ -33,9 +33,9 @@ export const ai = genkit({
     ],
     model: googleAI.model(MODEL_CONFIG.name, {
         temperature: MODEL_CONFIG.temperature,
-        maxOutputTokens: MODEL_CONFIG.maxOutputTokens,
-        topP: MODEL_CONFIG.topP,
-        topK: MODEL_CONFIG.topK
+        // maxOutputTokens: MODEL_CONFIG.maxOutputTokens,
+        // topP: MODEL_CONFIG.topP,
+        // topK: MODEL_CONFIG.topK
     })
 });
 
