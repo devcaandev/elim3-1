@@ -10,45 +10,107 @@ export const webhookHandler = async (req: any, res: any) => {
     });
 
     req.on('end', () => {
-        try {
-            const WhatsAppWebhook = JSON.parse(body) as WhatsAppWebhook;
-            
-            // Log the parsed webhook data nicely formatted
-            console.log('WhatsApp webhook received:', JSON.stringify(WhatsAppWebhook, null, 2));
-            
-            const messageId = extractMessageId(WhatsAppWebhook);
-            
-            if (messageId) {
-                markAsRead(messageId).then(() => {
-                    console.log('✅ Message marked as read:', messageId);
-                }).catch(error => {
-                    console.error('❌ Failed to mark message as read:', {
-                        messageId,
-                        error: error.message || error,
-                        url: error.url,
-                        phoneNumberId: error.phoneNumberId,
-                        status: error.status,
-                        statusText: error.statusText,
-                        responseBody: error.responseBody,
-                        cause: error.cause?.code || error.cause?.message
-                    });
-                });
-
-                processMessage(WhatsAppWebhook);
-
-            } else {
-                console.log('ℹ️ No message ID found in webhook (likely a status update)');
-            }
-        } catch (e:any) {
-            console.error('❌ Failed to parse webhook JSON:', {
-                error: e.message || e,
-                rawBody: body
-            });
-        }
-        // Use Node.js HTTP response methods
+        // OPTIMIZATION: Acknowledge webhook immediately to reduce perceived latency
         res.writeHead(200, { 'Content-Type': 'text/plain' });
         res.end('EVENT_RECEIVED');
+        
+        // Process webhook asynchronously
+        processWebhookAsync(body).catch(error => {
+            console.error('❌ Async webhook processing failed:', {
+                error: error.message || error,
+                stack: error.stack,
+                timestamp: new Date().toISOString()
+            });
+        });
     });
+};
+
+/**
+ * Processes webhook data asynchronously after acknowledging receipt
+ * This prevents WhatsApp from timing out while we process the message
+ */
+async function processWebhookAsync(body: string): Promise<void> {
+    const startTime = Date.now();
+    
+    try {
+        const WhatsAppWebhook = JSON.parse(body) as WhatsAppWebhook;
+        
+        // Log the parsed webhook data with timing
+        console.log('📨 WhatsApp webhook processing started:', {
+            timestamp: new Date().toISOString(),
+            messageCount: WhatsAppWebhook.entry?.[0]?.changes?.[0]?.value?.messages?.length || 0
+        });
+        
+        const messageId = extractMessageId(WhatsAppWebhook);
+        
+        if (messageId) {
+            // Process message with error handling and performance tracking
+            await processMessageWithTracking(WhatsAppWebhook, messageId, startTime);
+        } else {
+            console.log('ℹ️ No message ID found in webhook (likely a status update)', {
+                processingTime: `${Date.now() - startTime}ms`
+            });
+        }
+        
+    } catch (e: any) {
+        console.error('❌ Failed to parse webhook JSON:', {
+            error: e.message || e,
+            rawBody: body.substring(0, 500) + (body.length > 500 ? '...' : ''), // Truncate for logging
+            processingTime: `${Date.now() - startTime}ms`,
+            timestamp: new Date().toISOString()
+        });
+    }
+}
+
+/**
+ * Processes a WhatsApp message with performance tracking and error handling
+ */
+async function processMessageWithTracking(webhook: WhatsAppWebhook, messageId: string, startTime: number): Promise<void> {
+    try {
+        // OPTIMIZATION: Run mark-as-read and message processing in parallel
+        const [, processingResult] = await Promise.allSettled([
+            markAsRead(messageId),
+            processMessage(webhook)
+        ]);
+        
+        // Log mark-as-read result
+        const markAsReadResult = (await Promise.allSettled([markAsRead(messageId)]))[0];
+        if (markAsReadResult.status === 'fulfilled') {
+            console.log('✅ Message marked as read:', messageId);
+        } else {
+            console.error('❌ Failed to mark message as read:', {
+                messageId,
+                error: markAsReadResult.reason?.message || markAsReadResult.reason,
+                timestamp: new Date().toISOString()
+            });
+        }
+        
+        // Log processing result
+        const totalTime = Date.now() - startTime;
+        if (processingResult.status === 'fulfilled') {
+            console.log('✅ Message processing completed:', {
+                messageId,
+                totalTime: `${totalTime}ms`,
+                timestamp: new Date().toISOString()
+            });
+        } else {
+            console.error('❌ Message processing failed:', {
+                messageId,
+                error: processingResult.reason?.message || processingResult.reason,
+                totalTime: `${totalTime}ms`,
+                timestamp: new Date().toISOString()
+            });
+        }
+        
+    } catch (error: any) {
+        console.error('❌ Unexpected error in message processing:', {
+            messageId,
+            error: error.message || error,
+            stack: error.stack,
+            processingTime: `${Date.now() - startTime}ms`,
+            timestamp: new Date().toISOString()
+        });
+    }
 };
 
 
